@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpaceTracker</title>
+    <style>
+        :root {
+            --bg1: #07111f;
+            --bg2: #123a61;
+            --card: #ffffff;
+            --text: #0f172a;
+            --muted: #334155;
+            --accent: #0ea5e9;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+            color: var(--text);
+            background: linear-gradient(140deg, var(--bg1), var(--bg2));
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+        }
+
+        .card {
+            width: min(900px, 100%);
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: 0 16px 40px rgba(2, 6, 23, 0.4);
+            padding: 24px;
+        }
+
+        h1 {
+            margin-top: 0;
+            margin-bottom: 8px;
+        }
+
+        p {
+            color: var(--muted);
+        }
+
+        .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background: #e0f2fe;
+            color: #075985;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .error {
+            margin-top: 14px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .apod {
+            margin-top: 18px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 18px;
+        }
+
+        .apod img {
+            width: 100%;
+            border-radius: 12px;
+            margin-top: 12px;
+            border: 1px solid #cbd5e1;
+        }
+
+        .small {
+            font-size: 0.9rem;
+            color: #475569;
+        }
+    </style>
+</head>
+<body>
+<main class="card">
+    <div class="top">
+        <div>
+            <h1>SpaceTracker</h1>
+            <p>Java Spring Boot site for space missions and astronomy events.</p>
+        </div>
+        <span class="badge">APCSA Final</span>
+    </div>
+
+    <div class="error" th:if="${error}" th:text="${error}">Could not load NASA APOD right now.</div>
+
+    <section class="apod" th:if="${apod != null}">
+        <h2>NASA APOD</h2>
+        <p class="small" th:text="${apod.date}">date</p>
+        <h3 th:text="${apod.title}">title</h3>
+        <p th:text="${apod.explanation}">explanation</p>
+        <img th:if="${apod.media_type == 'image'}" th:src="${apod.url}" alt="NASA APOD image">
+        <p class="small" th:if="${apod.media_type != 'image'}">
+            APOD today is not an image. Open:
+            <a th:href="${apod.url}" target="_blank" rel="noopener">NASA link</a>
+        </p>
+    </section>
+</main>
+</body>
+</html>
