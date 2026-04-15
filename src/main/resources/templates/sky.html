@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sky Position</title>
+    <style>
+        :root {
+            --bg1: #07121f;
+            --bg2: #113450;
+            --card: #ffffff;
+            --text: #0f172a;
+            --muted: #475569;
+            --line: #dbeafe;
+            --accent: #38bdf8;
+            --error-bg: #fef2f2;
+            --error-text: #991b1b;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+            background: linear-gradient(145deg, var(--bg1), var(--bg2));
+            min-height: 100vh;
+            color: var(--text);
+            padding: 24px;
+        }
+
+        .wrap {
+            width: min(1100px, 100%);
+            margin: 0 auto;
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: 0 18px 40px rgba(2, 6, 23, 0.35);
+            padding: 20px;
+        }
+
+        .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .nav {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav a {
+            text-decoration: none;
+            font-weight: 700;
+            background: #e0f2fe;
+            color: #075985;
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+
+        form {
+            display: grid;
+            gap: 10px;
+            grid-template-columns: repeat(3, minmax(120px, 1fr));
+            margin-bottom: 10px;
+        }
+
+        input, button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            font: inherit;
+        }
+
+        button {
+            border: none;
+            background: var(--accent);
+            color: #082f49;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .wide {
+            grid-column: span 3;
+        }
+
+        .error {
+            background: var(--error-bg);
+            color: var(--error-text);
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+        }
+
+        th, td {
+            padding: 10px 8px;
+            border-bottom: 1px solid var(--line);
+            text-align: left;
+        }
+
+        th {
+            background: #eff6ff;
+            color: #1e3a8a;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .yes {
+            color: #166534;
+            font-weight: 700;
+        }
+
+        .no {
+            color: #991b1b;
+            font-weight: 700;
+        }
+
+        .hint {
+            color: var(--muted);
+            margin-top: 8px;
+        }
+
+        @media (max-width: 900px) {
+            form {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .wide {
+                grid-column: span 2;
+            }
+
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+<main class="wrap">
+    <div class="top">
+        <div>
+            <h1>Sky Position</h1>
+            <p class="hint">See where major sky objects are relative to the user.</p>
+        </div>
+        <div class="nav">
+            <a href="/">Home</a>
+            <a href="/missions">Missions</a>
+        </div>
+    </div>
+
+    <form method="get" action="/sky" id="skyForm">
+        <input type="number" step="any" name="latitude" id="latitude" th:value="${latitude}" placeholder="Latitude">
+        <input type="number" step="any" name="longitude" id="longitude" th:value="${longitude}" placeholder="Longitude">
+        <button type="button" id="geoButton">Use My Location</button>
+
+        <input type="text" class="wide" name="address" th:value="${address}" placeholder="Or enter address/city (e.g. New York, NY)">
+
+        <input type="date" name="date" th:value="${date}">
+        <input type="time" name="time" th:value="${time}">
+        <button type="submit">Get Sky Positions</button>
+    </form>
+
+    <div class="error" th:if="${error}" th:text="${error}">Could not load sky positions right now.</div>
+
+    <table th:if="${objects != null and !#lists.isEmpty(objects)}">
+        <thead>
+        <tr>
+            <th>Object</th>
+            <th>Altitude (deg)</th>
+            <th>Azimuth (deg)</th>
+            <th>Direction</th>
+            <th>Visible</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="obj : ${objects}">
+            <td th:text="${obj.name}">name</td>
+            <td th:text="${obj.altitudeDegrees}">0.0</td>
+            <td th:text="${obj.azimuthDegrees}">0.0</td>
+            <td th:text="${obj.direction}">N</td>
+            <td th:classappend="${obj.visible} ? 'yes' : 'no'" th:text="${obj.visible} ? 'Yes' : 'No'">Yes</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <p class="hint" th:if="${objects != null and #lists.isEmpty(objects)}">No sky objects returned for current input.</p>
+</main>
+
+<script>
+    const geoButton = document.getElementById("geoButton");
+    const latitudeInput = document.getElementById("latitude");
+    const longitudeInput = document.getElementById("longitude");
+
+    geoButton.addEventListener("click", () => {
+        if (!navigator.geolocation) {
+            alert("Geolocation is not supported in this browser.");
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                latitudeInput.value = position.coords.latitude.toFixed(6);
+                longitudeInput.value = position.coords.longitude.toFixed(6);
+            },
+            () => {
+                alert("Could not get your location. You can still type an address.");
+            }
+        );
+    });
+</script>
+</body>
+</html>

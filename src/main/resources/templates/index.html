@@ -89,6 +89,23 @@
             font-size: 0.9rem;
             color: #475569;
         }
+
+        .links {
+            margin-top: 14px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            text-decoration: none;
+            background: var(--accent);
+            color: #082f49;
+            font-weight: 700;
+            padding: 8px 12px;
+            border-radius: 9px;
+        }
     </style>
 </head>
 <body>
@@ -99,6 +116,11 @@
             <p>Java Spring Boot site for space missions and astronomy events.</p>
         </div>
         <span class="badge">APCSA Final</span>
+    </div>
+
+    <div class="links">
+        <a class="btn" href="/missions">View Missions</a>
+        <a class="btn" href="/sky">Sky Position</a>
     </div>
 
     <div class="error" th:if="${error}" th:text="${error}">Could not load NASA APOD right now.</div>

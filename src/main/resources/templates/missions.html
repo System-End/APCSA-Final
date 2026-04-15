@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpaceTracker Missions</title>
+    <style>
+        :root {
+            --bg1: #02111f;
+            --bg2: #0d2e4d;
+            --card: #ffffff;
+            --text: #0f172a;
+            --muted: #475569;
+            --line: #dbeafe;
+            --accent: #38bdf8;
+            --error-bg: #fef2f2;
+            --error-text: #991b1b;
+            --error-line: #fecaca;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+            background: radial-gradient(circle at top, #0f3b62, var(--bg1) 60%);
+            min-height: 100vh;
+            color: var(--text);
+            padding: 24px;
+        }
+
+        .wrap {
+            width: min(1100px, 100%);
+            margin: 0 auto;
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: 0 20px 45px rgba(2, 6, 23, 0.38);
+            padding: 20px;
+        }
+
+        h1 {
+            margin: 0;
+        }
+
+        .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+
+        .sub {
+            margin: 6px 0 0;
+            color: var(--muted);
+        }
+
+        .home {
+            text-decoration: none;
+            font-weight: 700;
+            background: #e0f2fe;
+            color: #075985;
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+
+        .filters {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(120px, 1fr));
+            gap: 10px;
+            margin: 16px 0;
+        }
+
+        .filters input,
+        .filters button {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #bfdbfe;
+            font: inherit;
+        }
+
+        .filters button {
+            background: var(--accent);
+            color: #082f49;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+        }
+
+        .error {
+            margin-top: 8px;
+            background: var(--error-bg);
+            color: var(--error-text);
+            border: 1px solid var(--error-line);
+            padding: 10px 12px;
+            border-radius: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 0.95rem;
+        }
+
+        th, td {
+            border-bottom: 1px solid var(--line);
+            text-align: left;
+            padding: 10px 8px;
+            vertical-align: top;
+        }
+
+        th {
+            font-size: 0.85rem;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            color: #1e3a8a;
+            background: #eff6ff;
+        }
+
+        .muted {
+            color: var(--muted);
+            margin-top: 8px;
+        }
+
+        @media (max-width: 900px) {
+            .filters {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+<main class="wrap">
+    <div class="top">
+        <div>
+            <h1>Upcoming Missions</h1>
+            <p class="sub">Live data from Launch Library 2</p>
+        </div>
+        <a href="/" class="home">Home</a>
+    </div>
+
+    <div style="margin-bottom: 12px;">
+        <a href="/sky" class="home" style="margin-right: 8px;">Sky Position</a>
+    </div>
+
+    <form class="filters" method="get" action="/missions">
+        <input type="text" name="agency" th:value="${agency}" placeholder="Agency (e.g. SpaceX)">
+        <input type="text" name="status" th:value="${status}" placeholder="Status (e.g. Go)">
+        <input type="number" name="year" th:value="${year}" placeholder="Year (e.g. 2026)">
+        <button type="submit">Apply Filters</button>
+    </form>
+
+    <div class="error" th:if="${error}" th:text="${error}">Could not load mission data right now.</div>
+
+    <table th:if="${missions != null and !#lists.isEmpty(missions)}">
+        <thead>
+        <tr>
+            <th>Mission</th>
+            <th>Agency</th>
+            <th>Status</th>
+            <th>Launch Date</th>
+            <th>Location</th>
+            <th>Type</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="mission : ${missions}">
+            <td th:text="${mission.name}">name</td>
+            <td th:text="${mission.agency}">agency</td>
+            <td th:text="${mission.status}">status</td>
+            <td th:text="${mission.launchDate}">launchDate</td>
+            <td th:text="${mission.location}">location</td>
+            <td th:text="${mission.missionType}">type</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <p class="muted" th:if="${missions != null and #lists.isEmpty(missions)}">
+        No missions matched your filters.
+    </p>
+</main>
+</body>
+</html>
