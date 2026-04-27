@@ -6,19 +6,23 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class MissionService {
     private static final String UPCOMING_LAUNCHES_URL = "https://ll.thespacedevs.com/2.3.0/launches/upcoming/?limit=50";
+    private static final Duration MISSION_CACHE_TTL = Duration.ofMinutes(15);
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
+    private final PostgresCacheService cacheService;
 
-    public MissionService() {
+    public MissionService(PostgresCacheService cacheService) {
         this.restTemplate = new RestTemplate();
         this.objectMapper = new ObjectMapper();
+        this.cacheService = cacheService;
     }
 
     public List<Mission> getUpcomingMissions(String agencyFilter, String statusFilter, Integer yearFilter) {
@@ -43,7 +47,7 @@ public class MissionService {
 
     private List<Mission> fetchUpcomingMissions() {
         List<Mission> missions = new ArrayList<>();
-        String json = restTemplate.getForObject(UPCOMING_LAUNCHES_URL, String.class);
+        String json = readThroughCache("launchlibrary", "launchlibrary:upcoming:50", UPCOMING_LAUNCHES_URL, MISSION_CACHE_TTL);
 
         if (json == null || json.isBlank()) {
             return missions;
@@ -72,6 +76,19 @@ public class MissionService {
         }
 
         return missions;
+    }
+
+    private String readThroughCache(String source, String cacheKey, String url, Duration ttl) {
+        String cached = cacheService.getCachedResponse(source, cacheKey);
+        if (cached != null && !cached.isBlank()) {
+            return cached;
+        }
+
+        String live = restTemplate.getForObject(url, String.class);
+        if (live != null && !live.isBlank()) {
+            cacheService.putCachedResponse(source, cacheKey, live, ttl);
+        }
+        return live;
     }
 
     private int parseYear(String launchDate) {

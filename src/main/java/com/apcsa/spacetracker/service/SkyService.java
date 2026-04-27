@@ -13,31 +13,41 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
 public class SkyService {
+    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
+    private static final Duration SKY_CACHE_TTL = Duration.ofMinutes(2);
+
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
     private final String appId;
     private final String appSecret;
+    private final PostgresCacheService cacheService;
 
     public SkyService(
             @Value("${astronomy.api.app-id:}") String appId,
-            @Value("${astronomy.api.app-secret:}") String appSecret
+            @Value("${astronomy.api.app-secret:}") String appSecret,
+            PostgresCacheService cacheService
     ) {
         this.restTemplate = new RestTemplate();
         this.objectMapper = new ObjectMapper();
         this.appId = appId;
         this.appSecret = appSecret;
+        this.cacheService = cacheService;
     }
 
     public List<SkyObject> getSkyObjects(double latitude, double longitude, LocalDate date, LocalTime time) {
         ensureCredentialsPresent();
+        String formattedTime = time.format(TIME_FORMAT);
 
         String url = UriComponentsBuilder
                 .fromHttpUrl("https://api.astronomyapi.com/api/v2/bodies/positions")
@@ -46,16 +56,19 @@ public class SkyService {
                 .queryParam("elevation", 0)
                 .queryParam("from_date", date)
                 .queryParam("to_date", date)
-                .queryParam("time", time)
+                .queryParam("time", formattedTime)
                 .queryParam("output", "table")
                 .toUriString();
 
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Basic " + encodeBasicAuth(appId, appSecret));
         HttpEntity<Void> entity = new HttpEntity<>(headers);
+        String cacheKey = String.format(
+                "astronomy:positions:%.4f:%.4f:%s:%s",
+                latitude, longitude, date, formattedTime
+        );
 
-        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
-        String body = response.getBody();
+        String body = readThroughAuthorizedCache("astronomy", cacheKey, url, entity, SKY_CACHE_TTL);
         if (body == null || body.isBlank()) {
             return List.of();
         }
@@ -75,6 +88,10 @@ public class SkyService {
 
             for (JsonNode row : rows) {
                 String name = row.path("entry").path("name").asText("Unknown");
+                if (shouldSkipObject(name)) {
+                    continue;
+                }
+
                 JsonNode firstCell = row.path("cells").isArray() && !row.path("cells").isEmpty()
                         ? row.path("cells").get(0)
                         : null;
@@ -95,6 +112,12 @@ public class SkyService {
 
                 objects.add(new SkyObject(name, round1(altitude), round1(azimuth), direction, visible));
             }
+
+            objects.sort(
+                    Comparator.comparing(SkyObject::isVisible).reversed()
+                            .thenComparing(SkyObject::getAltitudeDegrees, Comparator.reverseOrder())
+                            .thenComparing(SkyObject::getName)
+            );
         } catch (Exception e) {
             throw new IllegalStateException("Unable to parse Astronomy API response", e);
         }
@@ -113,8 +136,37 @@ public class SkyService {
         return Base64.getEncoder().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
     }
 
+    private String readThroughAuthorizedCache(
+            String source,
+            String cacheKey,
+            String url,
+            HttpEntity<Void> entity,
+            Duration ttl
+    ) {
+        String cached = cacheService.getCachedResponse(source, cacheKey);
+        if (cached != null && !cached.isBlank()) {
+            return cached;
+        }
+
+        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+        String live = response.getBody();
+        if (live != null && !live.isBlank()) {
+            cacheService.putCachedResponse(source, cacheKey, live, ttl);
+        }
+        return live;
+    }
+
     private double round1(double value) {
         return Math.round(value * 10.0) / 10.0;
+    }
+
+    private boolean shouldSkipObject(String name) {
+        if (name == null || name.isBlank()) {
+            return true;
+        }
+
+        String normalized = name.trim().toLowerCase();
+        return "earth".equals(normalized);
     }
 
     private String azimuthToDirection(double azimuth) {
