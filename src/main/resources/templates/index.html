@@ -4,123 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SpaceTracker</title>
-    <style>
-        :root {
-            --bg1: #07111f;
-            --bg2: #123a61;
-            --card: #ffffff;
-            --text: #0f172a;
-            --muted: #334155;
-            --accent: #0ea5e9;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            font-family: "Trebuchet MS", "Segoe UI", sans-serif;
-            color: var(--text);
-            background: linear-gradient(140deg, var(--bg1), var(--bg2));
-            min-height: 100vh;
-            display: grid;
-            place-items: center;
-            padding: 24px;
-        }
-
-        .card {
-            width: min(900px, 100%);
-            background: var(--card);
-            border-radius: 16px;
-            box-shadow: 0 16px 40px rgba(2, 6, 23, 0.4);
-            padding: 24px;
-        }
-
-        h1 {
-            margin-top: 0;
-            margin-bottom: 8px;
-        }
-
-        p {
-            color: var(--muted);
-        }
-
-        .top {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .badge {
-            background: #e0f2fe;
-            color: #075985;
-            padding: 6px 10px;
-            border-radius: 999px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .error {
-            margin-top: 14px;
-            padding: 10px 12px;
-            border-radius: 8px;
-            background: #fef2f2;
-            color: #991b1b;
-            border: 1px solid #fecaca;
-        }
-
-        .apod {
-            margin-top: 18px;
-            border-top: 1px solid #e2e8f0;
-            padding-top: 18px;
-        }
-
-        .apod img {
-            width: 100%;
-            border-radius: 12px;
-            margin-top: 12px;
-            border: 1px solid #cbd5e1;
-        }
-
-        .small {
-            font-size: 0.9rem;
-            color: #475569;
-        }
-
-        .links {
-            margin-top: 14px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            display: inline-block;
-            text-decoration: none;
-            background: var(--accent);
-            color: #082f49;
-            font-weight: 700;
-            padding: 8px 12px;
-            border-radius: 9px;
-        }
-    </style>
+    <link rel="stylesheet" th:href="@{/app.css}">
 </head>
-<body>
+<body class="page-home">
 <main class="card">
-    <div class="top">
+    <div class="hero">
         <div>
-            <h1>SpaceTracker</h1>
-            <p>Java Spring Boot site for space missions and astronomy events.</p>
-        </div>
-        <span class="badge">APCSA Final</span>
-    </div>
+            <div class="top">
+                <div>
+                    <h1>SpaceTracker</h1>
+                    <p>Launches, sky position, and event timing in one place.</p>
+                </div>
+            </div>
 
-    <div class="links">
-        <a class="btn" href="/missions">View Missions</a>
-        <a class="btn" href="/sky">Sky Position</a>
+            <div class="links">
+                <a class="btn" href="/missions">View Missions</a>
+                <a class="btn" href="/sky">Sky Position</a>
+                <a class="btn" href="/events">Astronomy Events</a>
+            </div>
+        </div>
+
+        <aside class="panel">
+            <h2>What It Pulls</h2>
+            <ul class="facts">
+                <li>NASA APOD for the home page</li>
+                <li>Launch Library for upcoming missions</li>
+                <li>AstronomyAPI for object positions and events</li>
+                <li>N2YO plus local Postgres cache for spacecraft lookups</li>
+            </ul>
+        </aside>
     </div>
 
     <div class="error" th:if="${error}" th:text="${error}">Could not load NASA APOD right now.</div>
