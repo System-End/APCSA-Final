@@ -2,6 +2,7 @@ package com.apcsa.spacetracker.controller;
 
 import com.apcsa.spacetracker.service.GeocodingService;
 import com.apcsa.spacetracker.service.SkyService;
+import com.apcsa.spacetracker.service.SpacecraftService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,10 +15,16 @@ import java.time.LocalTime;
 public class SkyController {
     private final SkyService skyService;
     private final GeocodingService geocodingService;
+    private final SpacecraftService spacecraftService;
 
-    public SkyController(SkyService skyService, GeocodingService geocodingService) {
+    public SkyController(
+            SkyService skyService,
+            GeocodingService geocodingService,
+            SpacecraftService spacecraftService
+    ) {
         this.skyService = skyService;
         this.geocodingService = geocodingService;
+        this.spacecraftService = spacecraftService;
     }
 
     @GetMapping("/sky")
@@ -50,6 +57,18 @@ public class SkyController {
                 model.addAttribute("objects", skyService.getSkyObjects(resolvedLat, resolvedLon, resolvedDate, resolvedTime));
             } catch (Exception ex) {
                 model.addAttribute("error", "Could not load sky positions right now.");
+            }
+
+            try {
+                model.addAttribute("spacecraft", spacecraftService.getRelativeSpacecraft(resolvedLat, resolvedLon));
+            } catch (Exception ex) {
+                model.addAttribute("spacecraftError", "Could not load spacecraft positions right now.");
+            }
+
+            try {
+                model.addAttribute("visiblePasses", spacecraftService.getVisiblePasses(resolvedLat, resolvedLon));
+            } catch (Exception ex) {
+                model.addAttribute("passError", "Could not load visible pass predictions right now.");
             }
         }
 

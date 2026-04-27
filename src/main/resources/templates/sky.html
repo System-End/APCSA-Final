@@ -1,225 +1,486 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sky Position</title>
-    <style>
-        :root {
-            --bg1: #07121f;
-            --bg2: #113450;
-            --card: #ffffff;
-            --text: #0f172a;
-            --muted: #475569;
-            --line: #dbeafe;
-            --accent: #38bdf8;
-            --error-bg: #fef2f2;
-            --error-text: #991b1b;
-        }
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Sky Position</title>
+        <link rel="stylesheet" th:href="@{/app.css}">
+    </head>
+    <body class="page-sky">
+        <main class="wrap">
+            <div class="top">
+                <div>
+                    <h1>Sky Position</h1>
+                    <p class="hint">
+                        Live object positions for a specific location and time.
+                    </p>
+                </div>
+                <div class="nav">
+                    <a href="/">Home</a>
+                    <a href="/missions">Missions</a>
+                    <a href="/events">Events</a>
+                </div>
+            </div>
 
-        * {
-            box-sizing: border-box;
-        }
+            <form method="get" action="/sky" id="skyForm" class="sky-form">
+                <input
+                    type="number"
+                    step="any"
+                    name="latitude"
+                    id="latitude"
+                    th:value="${latitude}"
+                    placeholder="Latitude"
+                />
+                <input
+                    type="number"
+                    step="any"
+                    name="longitude"
+                    id="longitude"
+                    th:value="${longitude}"
+                    placeholder="Longitude"
+                />
+                <button type="button" id="geoButton">Use My Location</button>
 
-        body {
-            margin: 0;
-            font-family: "Trebuchet MS", "Segoe UI", sans-serif;
-            background: linear-gradient(145deg, var(--bg1), var(--bg2));
-            min-height: 100vh;
-            color: var(--text);
-            padding: 24px;
-        }
+                <input
+                    type="text"
+                    class="wide"
+                    name="address"
+                    id="address"
+                    th:value="${address}"
+                    placeholder="Or enter full address/city (e.g. 1600 Amphitheatre Parkway, Mountain View, CA)"
+                />
+                <p class="wide small-note">
+                    Start typing an address to get suggestions, then click one
+                    to auto-fill coordinates.
+                </p>
 
-        .wrap {
-            width: min(1100px, 100%);
-            margin: 0 auto;
-            background: var(--card);
-            border-radius: 16px;
-            box-shadow: 0 18px 40px rgba(2, 6, 23, 0.35);
-            padding: 20px;
-        }
+                <div class="wide suggest" id="suggestions"></div>
 
-        .top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 14px;
-        }
+                <input type="date" name="date" th:value="${date}" />
+                <input type="time" name="time" th:value="${time}" />
+                <button type="submit">Get Sky Positions</button>
+            </form>
 
-        .nav {
-            display: flex;
-            gap: 8px;
-        }
+            <div class="error" th:if="${error}" th:text="${error}">
+                Could not load sky positions right now.
+            </div>
 
-        .nav a {
-            text-decoration: none;
-            font-weight: 700;
-            background: #e0f2fe;
-            color: #075985;
-            padding: 8px 12px;
-            border-radius: 8px;
-        }
+            <table th:if="${objects != null and !#lists.isEmpty(objects)}">
+                <thead>
+                    <tr>
+                        <th>Object</th>
+                        <th>Altitude (deg)</th>
+                        <th>Azimuth (deg)</th>
+                        <th>Direction</th>
+                        <th>Visible</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="obj : ${objects}">
+                        <td th:text="${obj.name}">name</td>
+                        <td th:text="${obj.altitudeDegrees}">0.0</td>
+                        <td th:text="${obj.azimuthDegrees}">0.0</td>
+                        <td th:text="${obj.direction}">N</td>
+                        <td
+                            th:classappend="${obj.visible} ? 'yes' : 'no'"
+                            th:text="${obj.visible} ? 'Yes' : 'No'"
+                        >
+                            Yes
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
 
-        form {
-            display: grid;
-            gap: 10px;
-            grid-template-columns: repeat(3, minmax(120px, 1fr));
-            margin-bottom: 10px;
-        }
+            <p
+                class="hint"
+                th:if="${objects != null and #lists.isEmpty(objects)}"
+            >
+                No sky objects returned for current input.
+            </p>
 
-        input, button {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #bfdbfe;
-            border-radius: 8px;
-            font: inherit;
-        }
+            <h2 style="margin-top: 22px">Spacecraft Relative to You</h2>
+            <p class="hint">Live data currently available from WhereTheISS.at.</p>
+            <div class="error" th:if="${spacecraftError}" th:text="${spacecraftError}">
+                Could not load spacecraft positions right now.
+            </div>
 
-        button {
-            border: none;
-            background: var(--accent);
-            color: #082f49;
-            font-weight: 700;
-            cursor: pointer;
-        }
+            <table
+                th:if="${spacecraft != null and !#lists.isEmpty(spacecraft)}"
+            >
+                <thead>
+                    <tr>
+                        <th>Spacecraft</th>
+                        <th>NORAD ID</th>
+                        <th>Elevation (deg)</th>
+                        <th>Azimuth (deg)</th>
+                        <th>Direction</th>
+                        <th>Range (km)</th>
+                        <th>Visibility</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="craft : ${spacecraft}">
+                        <td th:text="${craft.name}">ISS</td>
+                        <td th:text="${craft.noradId}">25544</td>
+                        <td th:text="${craft.elevationDegrees}">0.0</td>
+                        <td th:text="${craft.azimuthDegrees}">0.0</td>
+                        <td th:text="${craft.direction}">N</td>
+                        <td th:text="${craft.rangeKm}">0.0</td>
+                        <td th:text="${craft.visibility}">unknown</td>
+                    </tr>
+                </tbody>
+            </table>
 
-        .wide {
-            grid-column: span 3;
-        }
+            <p
+                class="hint"
+                th:if="${spacecraft != null and #lists.isEmpty(spacecraft)}"
+            >
+                No spacecraft data available right now from this source.
+            </p>
 
-        .error {
-            background: var(--error-bg);
-            color: var(--error-text);
-            padding: 10px 12px;
-            border-radius: 8px;
-            margin: 10px 0;
-        }
+            <h2 style="margin-top: 22px">Optical Satellite Passes</h2>
+            <p class="hint">Visible now or within the next 5 minutes from NY2O.</p>
+            <div class="error" th:if="${passError}" th:text="${passError}">
+                Could not load visible pass predictions right now.
+            </div>
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 12px;
-        }
+            <table
+                th:if="${visiblePasses != null and !#lists.isEmpty(visiblePasses)}"
+            >
+                <thead>
+                    <tr>
+                        <th>Satellite</th>
+                        <th>NORAD</th>
+                        <th>Status</th>
+                        <th>Start</th>
+                        <th>Max</th>
+                        <th>End</th>
+                        <th>Max El</th>
+                        <th>Direction</th>
+                        <th>Duration</th>
+                        <th>Mag</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="p : ${visiblePasses}">
+                        <td th:text="${p.satName}">SPACE STATION</td>
+                        <td th:text="${p.satId}">25544</td>
+                        <td th:text="${p.status}">Visible now</td>
+                        <td th:text="${p.startLocal}">04-15 21:00:00</td>
+                        <td th:text="${p.maxLocal}">04-15 21:02:00</td>
+                        <td th:text="${p.endLocal}">04-15 21:05:00</td>
+                        <td th:text="${p.maxElevation}">45.2</td>
+                        <td th:text="${p.maxDirection}">SW</td>
+                        <td th:text="${p.durationSeconds}">300</td>
+                        <td th:text="${p.magnitudeLabel}">-1.8</td>
+                    </tr>
+                </tbody>
+            </table>
 
-        th, td {
-            padding: 10px 8px;
-            border-bottom: 1px solid var(--line);
-            text-align: left;
-        }
+            <p
+                class="hint"
+                th:if="${visiblePasses != null and #lists.isEmpty(visiblePasses)}"
+            >
+                No optical passes found in the next 5 minutes.
+            </p>
 
-        th {
-            background: #eff6ff;
-            color: #1e3a8a;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-        }
+            <section class="catalog-box">
+                <h2 style="margin-top: 0">Local Spacecraft Lookup</h2>
+                <p class="hint">
+                    This searches your Postgres cache only. It does not hit upstream APIs.
+                </p>
+                <div class="catalog-search">
+                    <input
+                        type="text"
+                        id="catalogQuery"
+                        placeholder="Search spacecraft name or partial name"
+                    />
+                    <button type="button" id="catalogSearchButton">Search Cache</button>
+                </div>
+                <div class="catalog-suggest" id="catalogSuggest"></div>
+                <div class="catalog-results" id="catalogResults"></div>
+                <p class="catalog-empty" id="catalogEmpty">
+                    Search after using `/sky` a few times so the local catalog has entries.
+                </p>
+            </section>
+        </main>
 
-        .yes {
-            color: #166534;
-            font-weight: 700;
-        }
+        <script>
+            const geoButton = document.getElementById("geoButton");
+            const latitudeInput = document.getElementById("latitude");
+            const longitudeInput = document.getElementById("longitude");
+            const addressInput = document.getElementById("address");
+            const suggestionsBox = document.getElementById("suggestions");
+            const catalogQueryInput = document.getElementById("catalogQuery");
+            const catalogSearchButton = document.getElementById("catalogSearchButton");
+            const catalogSuggest = document.getElementById("catalogSuggest");
+            const catalogResults = document.getElementById("catalogResults");
+            const catalogEmpty = document.getElementById("catalogEmpty");
+            let debounceTimer = null;
+            const suggestionCache = new Map();
+            let catalogDebounceTimer = null;
 
-        .no {
-            color: #991b1b;
-            font-weight: 700;
-        }
+            geoButton.addEventListener("click", () => {
+                if (!navigator.geolocation) {
+                    alert("Geolocation is not supported in this browser.");
+                    return;
+                }
 
-        .hint {
-            color: var(--muted);
-            margin-top: 8px;
-        }
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        latitudeInput.value =
+                            position.coords.latitude.toFixed(6);
+                        longitudeInput.value =
+                            position.coords.longitude.toFixed(6);
+                    },
+                    () => {
+                        alert(
+                            "Could not get your location. You can still type an address.",
+                        );
+                    },
+                );
+            });
 
-        @media (max-width: 900px) {
-            form {
-                grid-template-columns: 1fr 1fr;
+            function hideSuggestions() {
+                suggestionsBox.innerHTML = "";
+                suggestionsBox.style.display = "none";
             }
 
-            .wide {
-                grid-column: span 2;
+            function showSuggestions(items) {
+                if (!items || items.length === 0) {
+                    hideSuggestions();
+                    return;
+                }
+
+                suggestionsBox.innerHTML = "";
+                items.forEach((item) => {
+                    const btn = document.createElement("button");
+                    btn.type = "button";
+                    btn.className = "suggest-item";
+                    btn.textContent = item.displayName;
+
+                    btn.addEventListener("click", () => pickSuggestion(item));
+
+                    suggestionsBox.appendChild(btn);
+                });
+
+                suggestionsBox.style.display = "block";
             }
 
-            table {
-                display: block;
-                overflow-x: auto;
+            function pickSuggestion(item) {
+                addressInput.value = item.displayName;
+                latitudeInput.value = Number(item.latitude).toFixed(6);
+                longitudeInput.value = Number(item.longitude).toFixed(6);
+                hideSuggestions();
             }
-        }
-    </style>
-</head>
-<body>
-<main class="wrap">
-    <div class="top">
-        <div>
-            <h1>Sky Position</h1>
-            <p class="hint">See where major sky objects are relative to the user.</p>
-        </div>
-        <div class="nav">
-            <a href="/">Home</a>
-            <a href="/missions">Missions</a>
-        </div>
-    </div>
 
-    <form method="get" action="/sky" id="skyForm">
-        <input type="number" step="any" name="latitude" id="latitude" th:value="${latitude}" placeholder="Latitude">
-        <input type="number" step="any" name="longitude" id="longitude" th:value="${longitude}" placeholder="Longitude">
-        <button type="button" id="geoButton">Use My Location</button>
-
-        <input type="text" class="wide" name="address" th:value="${address}" placeholder="Or enter address/city (e.g. New York, NY)">
-
-        <input type="date" name="date" th:value="${date}">
-        <input type="time" name="time" th:value="${time}">
-        <button type="submit">Get Sky Positions</button>
-    </form>
-
-    <div class="error" th:if="${error}" th:text="${error}">Could not load sky positions right now.</div>
-
-    <table th:if="${objects != null and !#lists.isEmpty(objects)}">
-        <thead>
-        <tr>
-            <th>Object</th>
-            <th>Altitude (deg)</th>
-            <th>Azimuth (deg)</th>
-            <th>Direction</th>
-            <th>Visible</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="obj : ${objects}">
-            <td th:text="${obj.name}">name</td>
-            <td th:text="${obj.altitudeDegrees}">0.0</td>
-            <td th:text="${obj.azimuthDegrees}">0.0</td>
-            <td th:text="${obj.direction}">N</td>
-            <td th:classappend="${obj.visible} ? 'yes' : 'no'" th:text="${obj.visible} ? 'Yes' : 'No'">Yes</td>
-        </tr>
-        </tbody>
-    </table>
-
-    <p class="hint" th:if="${objects != null and #lists.isEmpty(objects)}">No sky objects returned for current input.</p>
-</main>
-
-<script>
-    const geoButton = document.getElementById("geoButton");
-    const latitudeInput = document.getElementById("latitude");
-    const longitudeInput = document.getElementById("longitude");
-
-    geoButton.addEventListener("click", () => {
-        if (!navigator.geolocation) {
-            alert("Geolocation is not supported in this browser.");
-            return;
-        }
-
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                latitudeInput.value = position.coords.latitude.toFixed(6);
-                longitudeInput.value = position.coords.longitude.toFixed(6);
-            },
-            () => {
-                alert("Could not get your location. You can still type an address.");
+            function norm(text) {
+                return text.trim().toLowerCase();
             }
-        );
-    });
-</script>
-</body>
+
+            addressInput.addEventListener("input", () => {
+                const query = addressInput.value.trim();
+
+                const latNum = Number(latitudeInput.value);
+                const lonNum = Number(longitudeInput.value);
+                const looksLikeSamePoint =
+                    Number.isFinite(latNum) &&
+                    Number.isFinite(lonNum) &&
+                    Math.abs(latNum) <= 90 &&
+                    Math.abs(lonNum) <= 180 &&
+                    addressInput.value.trim().length > 0;
+
+                if (!looksLikeSamePoint) {
+                    latitudeInput.value = "";
+                    longitudeInput.value = "";
+                }
+
+                clearTimeout(debounceTimer);
+                if (query.length < 3) {
+                    hideSuggestions();
+                    return;
+                }
+
+                debounceTimer = setTimeout(async () => {
+                    try {
+                        const key = norm(query);
+                        if (suggestionCache.has(key)) {
+                            showSuggestions(suggestionCache.get(key));
+                            return;
+                        }
+
+                        const response = await fetch(
+                            `/api/geocode/suggest?q=${encodeURIComponent(query)}`,
+                        );
+                        if (!response.ok) {
+                            hideSuggestions();
+                            return;
+                        }
+
+                        const data = await response.json();
+                        suggestionCache.set(key, data);
+                        showSuggestions(data);
+                    } catch (_) {
+                        hideSuggestions();
+                    }
+                }, 300);
+            });
+
+            addressInput.addEventListener("keydown", (event) => {
+                if (event.key !== "Enter") {
+                    return;
+                }
+
+                if (suggestionsBox.style.display !== "block") {
+                    return;
+                }
+
+                const first = suggestionsBox.querySelector(".suggest-item");
+                if (!first) {
+                    return;
+                }
+
+                event.preventDefault();
+                first.click();
+            });
+
+            document.addEventListener("click", (event) => {
+                if (
+                    !suggestionsBox.contains(event.target) &&
+                    event.target !== addressInput
+                ) {
+                    hideSuggestions();
+                }
+            });
+
+            function showCatalogRows(items) {
+                catalogResults.innerHTML = "";
+
+                if (!items || items.length === 0) {
+                    catalogResults.style.display = "none";
+                    catalogEmpty.textContent = "No local cache matches found.";
+                    return;
+                }
+
+                items.forEach((item) => {
+                    const row = document.createElement("div");
+                    row.className = "catalog-row";
+                    row.innerHTML = `
+                        <div><strong>${item.displayName}</strong></div>
+                        <div>NORAD ${item.noradId}</div>
+                        <div>${item.source}</div>
+                        <div>${item.lastSeenAt}</div>
+                    `;
+                    catalogResults.appendChild(row);
+                });
+
+                catalogResults.style.display = "block";
+                catalogEmpty.textContent = "";
+            }
+
+            function hideCatalogSuggest() {
+                catalogSuggest.innerHTML = "";
+                catalogSuggest.style.display = "none";
+            }
+
+            function showCatalogSuggest(items) {
+                catalogSuggest.innerHTML = "";
+
+                if (!items || items.length === 0) {
+                    hideCatalogSuggest();
+                    return;
+                }
+
+                items.forEach((item) => {
+                    const btn = document.createElement("button");
+                    btn.type = "button";
+                    btn.className = "suggest-item";
+                    btn.textContent = `${item.displayName} (NORAD ${item.noradId})`;
+                    btn.addEventListener("click", () => {
+                        catalogQueryInput.value = item.displayName;
+                        hideCatalogSuggest();
+                        runCatalogSearch();
+                    });
+                    catalogSuggest.appendChild(btn);
+                });
+
+                catalogSuggest.style.display = "block";
+            }
+
+            async function runCatalogSearch() {
+                const query = catalogQueryInput.value.trim();
+                if (query.length < 2) {
+                    catalogResults.style.display = "none";
+                    catalogResults.innerHTML = "";
+                    catalogEmpty.textContent = "Type at least 2 characters to search the local cache.";
+                    return;
+                }
+
+                catalogEmpty.textContent = "Searching local cache...";
+
+                try {
+                    const response = await fetch(
+                        `/api/spacecraft/search?q=${encodeURIComponent(query)}`,
+                    );
+
+                    if (!response.ok) {
+                        catalogResults.style.display = "none";
+                        catalogEmpty.textContent = "Local cache search failed.";
+                        return;
+                    }
+
+                    const data = await response.json();
+                    showCatalogRows(data);
+                } catch (_) {
+                    catalogResults.style.display = "none";
+                    catalogEmpty.textContent = "Local cache search failed.";
+                }
+            }
+
+            catalogSearchButton.addEventListener("click", runCatalogSearch);
+            catalogQueryInput.addEventListener("input", () => {
+                clearTimeout(catalogDebounceTimer);
+
+                const query = catalogQueryInput.value.trim();
+                if (query.length < 2) {
+                    hideCatalogSuggest();
+                    return;
+                }
+
+                catalogDebounceTimer = setTimeout(async () => {
+                    try {
+                        const response = await fetch(
+                            `/api/spacecraft/suggest?q=${encodeURIComponent(query)}`,
+                        );
+
+                        if (!response.ok) {
+                            hideCatalogSuggest();
+                            return;
+                        }
+
+                        const data = await response.json();
+                        showCatalogSuggest(data);
+                    } catch (_) {
+                        hideCatalogSuggest();
+                    }
+                }, 180);
+            });
+            catalogQueryInput.addEventListener("keydown", (event) => {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    hideCatalogSuggest();
+                    runCatalogSearch();
+                }
+            });
+
+            document.addEventListener("click", (event) => {
+                if (
+                    !catalogSuggest.contains(event.target) &&
+                    event.target !== catalogQueryInput
+                ) {
+                    hideCatalogSuggest();
+                }
+            });
+        </script>
+    </body>
 </html>
