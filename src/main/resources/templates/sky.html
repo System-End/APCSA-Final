@@ -94,13 +94,10 @@
 
             <section th:if="${searched}">
                 <h2 style="margin-top: 22px">Spacecraft Relative to You</h2>
-                <div class="error" th:if="${spacecraftError}" th:text="${spacecraftError}">
-                    Could not load spacecraft positions right now.
-                </div>
-
-                <table
-                    th:if="${spacecraft != null and !#lists.isEmpty(spacecraft)}"
-                >
+                <div class="hint" id="spacecraftLoading">Loading spacecraft...</div>
+                <div class="error" id="spacecraftError" style="display: none;"></div>
+                <div id="spacecraftEmpty" class="hint" style="display: none;">No spacecraft data available right now.</div>
+                <table id="spacecraftTable" style="display: none;">
                     <thead>
                         <tr>
                             <th>Spacecraft</th>
@@ -112,34 +109,14 @@
                             <th>Visibility</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr th:each="craft : ${spacecraft}">
-                            <td th:text="${craft.name}">ISS</td>
-                            <td th:text="${craft.noradId}">25544</td>
-                            <td th:text="${craft.elevationDegrees}">0.0</td>
-                            <td th:text="${craft.azimuthDegrees}">0.0</td>
-                            <td th:text="${craft.direction}">N</td>
-                            <td th:text="${craft.rangeKm}">0.0</td>
-                            <td th:text="${craft.visibility}">unknown</td>
-                        </tr>
-                    </tbody>
+                    <tbody id="spacecraftBody"></tbody>
                 </table>
 
-                <p
-                    class="hint"
-                    th:if="${spacecraft != null and #lists.isEmpty(spacecraft)}"
-                >
-                    No spacecraft data available right now.
-                </p>
-
                 <h2 style="margin-top: 22px">Optical Satellite Passes</h2>
-                <div class="error" th:if="${passError}" th:text="${passError}">
-                    Could not load visible pass predictions right now.
-                </div>
-
-                <table
-                    th:if="${visiblePasses != null and !#lists.isEmpty(visiblePasses)}"
-                >
+                <div class="hint" id="passesLoading">Loading passes...</div>
+                <div class="error" id="passesError" style="display: none;"></div>
+                <div id="passesEmpty" class="hint" style="display: none;">No optical passes found in the next 5 minutes.</div>
+                <table id="passesTable" style="display: none;">
                     <thead>
                         <tr>
                             <th>Satellite</th>
@@ -154,28 +131,8 @@
                             <th>Mag</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr th:each="p : ${visiblePasses}">
-                            <td th:text="${p.satName}">SPACE STATION</td>
-                            <td th:text="${p.satId}">25544</td>
-                            <td th:text="${p.status}">Visible now</td>
-                            <td th:text="${p.startLocal}">04-15 21:00:00</td>
-                            <td th:text="${p.maxLocal}">04-15 21:02:00</td>
-                            <td th:text="${p.endLocal}">04-15 21:05:00</td>
-                            <td th:text="${p.maxElevation}">45.2</td>
-                            <td th:text="${p.maxDirection}">SW</td>
-                            <td th:text="${p.durationSeconds}">300</td>
-                            <td th:text="${p.magnitudeLabel}">-1.8</td>
-                        </tr>
-                    </tbody>
+                    <tbody id="passesBody"></tbody>
                 </table>
-
-                <p
-                    class="hint"
-                    th:if="${visiblePasses != null and #lists.isEmpty(visiblePasses)}"
-                >
-                    No optical passes found in the next 5 minutes.
-                </p>
             </section>
 
             <section class="catalog-box" th:if="${searched}">
@@ -194,12 +151,25 @@
             </section>
         </main>
 
-        <script>
+        <script th:inline="javascript">
             const geoButton = document.getElementById("geoButton");
             const latitudeInput = document.getElementById("latitude");
             const longitudeInput = document.getElementById("longitude");
             const addressInput = document.getElementById("address");
             const suggestionsBox = document.getElementById("suggestions");
+            const searched = /*[[${searched}]]*/ false;
+            const initialLatitude = document.getElementById("latitude").value;
+            const initialLongitude = document.getElementById("longitude").value;
+            const spacecraftLoading = document.getElementById("spacecraftLoading");
+            const spacecraftError = document.getElementById("spacecraftError");
+            const spacecraftEmpty = document.getElementById("spacecraftEmpty");
+            const spacecraftTable = document.getElementById("spacecraftTable");
+            const spacecraftBody = document.getElementById("spacecraftBody");
+            const passesLoading = document.getElementById("passesLoading");
+            const passesError = document.getElementById("passesError");
+            const passesEmpty = document.getElementById("passesEmpty");
+            const passesTable = document.getElementById("passesTable");
+            const passesBody = document.getElementById("passesBody");
             const catalogQueryInput = document.getElementById("catalogQuery");
             const catalogSearchButton = document.getElementById("catalogSearchButton");
             const catalogSuggest = document.getElementById("catalogSuggest");
@@ -233,6 +203,15 @@
             function hideSuggestions() {
                 suggestionsBox.innerHTML = "";
                 suggestionsBox.style.display = "none";
+            }
+
+            function escapeHtml(value) {
+                return String(value)
+                    .replaceAll("&", "&amp;")
+                    .replaceAll("<", "&lt;")
+                    .replaceAll(">", "&gt;")
+                    .replaceAll("\"", "&quot;")
+                    .replaceAll("'", "&#39;");
             }
 
             function showSuggestions(items) {
@@ -432,50 +411,134 @@
                 }
             }
 
-            catalogSearchButton.addEventListener("click", runCatalogSearch);
-            catalogQueryInput.addEventListener("input", () => {
-                clearTimeout(catalogDebounceTimer);
-
-                const query = catalogQueryInput.value.trim();
-                if (query.length < 2) {
-                    hideCatalogSuggest();
+            async function loadSpacecraftSections() {
+                if (!searched || !initialLatitude || !initialLongitude) {
                     return;
                 }
 
-                catalogDebounceTimer = setTimeout(async () => {
-                    try {
-                        const response = await fetch(
-                            `/api/spacecraft/suggest?q=${encodeURIComponent(query)}`,
-                        );
+                const params = `latitude=${encodeURIComponent(initialLatitude)}&longitude=${encodeURIComponent(initialLongitude)}`;
 
+                const spacecraftPromise = fetch(`/api/spacecraft/relative?${params}`)
+                    .then((response) => {
                         if (!response.ok) {
-                            hideCatalogSuggest();
+                            throw new Error("Could not load spacecraft positions right now.");
+                        }
+                        return response.json();
+                    })
+                    .then((items) => {
+                        spacecraftLoading.style.display = "none";
+                        if (!items || items.length === 0) {
+                            spacecraftEmpty.style.display = "block";
                             return;
                         }
 
-                        const data = await response.json();
-                        showCatalogSuggest(data);
-                    } catch (_) {
+                        spacecraftBody.innerHTML = items.map((craft) => `
+                            <tr>
+                                <td>${escapeHtml(craft.name)}</td>
+                                <td>${escapeHtml(craft.noradId)}</td>
+                                <td>${escapeHtml(craft.elevationDegrees)}</td>
+                                <td>${escapeHtml(craft.azimuthDegrees)}</td>
+                                <td>${escapeHtml(craft.direction)}</td>
+                                <td>${escapeHtml(craft.rangeKm)}</td>
+                                <td>${escapeHtml(craft.visibility)}</td>
+                            </tr>
+                        `).join("");
+                        spacecraftTable.style.display = "table";
+                    })
+                    .catch((error) => {
+                        spacecraftLoading.style.display = "none";
+                        spacecraftError.textContent = error.message;
+                        spacecraftError.style.display = "block";
+                    });
+
+                const passesPromise = fetch(`/api/spacecraft/passes?${params}`)
+                    .then((response) => {
+                        if (!response.ok) {
+                            throw new Error("Could not load visible pass predictions right now.");
+                        }
+                        return response.json();
+                    })
+                    .then((items) => {
+                        passesLoading.style.display = "none";
+                        if (!items || items.length === 0) {
+                            passesEmpty.style.display = "block";
+                            return;
+                        }
+
+                        passesBody.innerHTML = items.map((pass) => `
+                            <tr>
+                                <td>${escapeHtml(pass.satName)}</td>
+                                <td>${escapeHtml(pass.satId)}</td>
+                                <td>${escapeHtml(pass.status)}</td>
+                                <td>${escapeHtml(pass.startLocal)}</td>
+                                <td>${escapeHtml(pass.maxLocal)}</td>
+                                <td>${escapeHtml(pass.endLocal)}</td>
+                                <td>${escapeHtml(pass.maxElevation)}</td>
+                                <td>${escapeHtml(pass.maxDirection)}</td>
+                                <td>${escapeHtml(pass.durationSeconds)}</td>
+                                <td>${escapeHtml(pass.magnitudeLabel)}</td>
+                            </tr>
+                        `).join("");
+                        passesTable.style.display = "table";
+                    })
+                    .catch((error) => {
+                        passesLoading.style.display = "none";
+                        passesError.textContent = error.message;
+                        passesError.style.display = "block";
+                    });
+
+                await Promise.allSettled([spacecraftPromise, passesPromise]);
+            }
+
+            if (catalogSearchButton && catalogQueryInput) {
+                catalogSearchButton.addEventListener("click", runCatalogSearch);
+                catalogQueryInput.addEventListener("input", () => {
+                    clearTimeout(catalogDebounceTimer);
+
+                    const query = catalogQueryInput.value.trim();
+                    if (query.length < 2) {
+                        hideCatalogSuggest();
+                        return;
+                    }
+
+                    catalogDebounceTimer = setTimeout(async () => {
+                        try {
+                            const response = await fetch(
+                                `/api/spacecraft/suggest?q=${encodeURIComponent(query)}`,
+                            );
+
+                            if (!response.ok) {
+                                hideCatalogSuggest();
+                                return;
+                            }
+
+                            const data = await response.json();
+                            showCatalogSuggest(data);
+                        } catch (_) {
+                            hideCatalogSuggest();
+                        }
+                    }, 180);
+                });
+                catalogQueryInput.addEventListener("keydown", (event) => {
+                    if (event.key === "Enter") {
+                        event.preventDefault();
+                        hideCatalogSuggest();
+                        runCatalogSearch();
+                    }
+                });
+
+                document.addEventListener("click", (event) => {
+                    if (
+                        catalogSuggest &&
+                        !catalogSuggest.contains(event.target) &&
+                        event.target !== catalogQueryInput
+                    ) {
                         hideCatalogSuggest();
                     }
-                }, 180);
-            });
-            catalogQueryInput.addEventListener("keydown", (event) => {
-                if (event.key === "Enter") {
-                    event.preventDefault();
-                    hideCatalogSuggest();
-                    runCatalogSearch();
-                }
-            });
+                });
+            }
 
-            document.addEventListener("click", (event) => {
-                if (
-                    !catalogSuggest.contains(event.target) &&
-                    event.target !== catalogQueryInput
-                ) {
-                    hideCatalogSuggest();
-                }
-            });
+            loadSpacecraftSections();
         </script>
     </body>
 </html>

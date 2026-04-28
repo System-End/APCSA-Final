@@ -1,7 +1,10 @@
 package com.apcsa.spacetracker.controller;
 
 import com.apcsa.spacetracker.model.SpacecraftCatalogEntry;
+import com.apcsa.spacetracker.model.SpacecraftRelative;
+import com.apcsa.spacetracker.model.VisiblePass;
 import com.apcsa.spacetracker.service.PostgresCacheService;
+import com.apcsa.spacetracker.service.SpacecraftService;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,9 +17,14 @@ import java.util.concurrent.TimeUnit;
 @RestController
 public class SpacecraftCatalogController {
     private final PostgresCacheService cacheService;
+    private final SpacecraftService spacecraftService;
 
-    public SpacecraftCatalogController(PostgresCacheService cacheService) {
+    public SpacecraftCatalogController(
+            PostgresCacheService cacheService,
+            SpacecraftService spacecraftService
+    ) {
         this.cacheService = cacheService;
+        this.spacecraftService = spacecraftService;
     }
 
     @GetMapping("/api/spacecraft/search")
@@ -42,6 +50,28 @@ public class SpacecraftCatalogController {
         }
 
         List<SpacecraftCatalogEntry> results = cacheService.suggestCatalog(q.trim(), 6);
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(30, TimeUnit.SECONDS))
+                .body(results);
+    }
+
+    @GetMapping("/api/spacecraft/relative")
+    public ResponseEntity<List<SpacecraftRelative>> relative(
+            @RequestParam Double latitude,
+            @RequestParam Double longitude
+    ) {
+        List<SpacecraftRelative> results = spacecraftService.getRelativeSpacecraft(latitude, longitude);
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(30, TimeUnit.SECONDS))
+                .body(results);
+    }
+
+    @GetMapping("/api/spacecraft/passes")
+    public ResponseEntity<List<VisiblePass>> passes(
+            @RequestParam Double latitude,
+            @RequestParam Double longitude
+    ) {
+        List<VisiblePass> results = spacecraftService.getVisiblePasses(latitude, longitude);
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(30, TimeUnit.SECONDS))
                 .body(results);
