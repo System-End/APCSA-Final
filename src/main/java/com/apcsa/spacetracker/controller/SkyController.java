@@ -72,6 +72,7 @@ public class SkyController {
             }
         }
 
+        model.addAttribute("searched", resolvedLat != null && resolvedLon != null);
         model.addAttribute("latitude", resolvedLat == null ? "" : resolvedLat);
         model.addAttribute("longitude", resolvedLon == null ? "" : resolvedLon);
         model.addAttribute("address", address == null ? "" : address);

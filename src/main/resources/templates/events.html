@@ -8,27 +8,16 @@
 </head>
 <body class="page-events">
 <main class="wrap">
-    <div class="top hero">
+    <div class="top">
         <div>
             <h1>Astronomy Events</h1>
-            <p class="sub">Observer-based sun and moon events for a specific location and date range.</p>
-            <div class="meta">
-                <span class="chip" th:text="${events != null ? #lists.size(events) + ' events' : '0 events'}">0 events</span>
-                <span class="chip">Phoenix defaults loaded</span>
-            </div>
+            <p class="sub">Sun and moon events</p>
         </div>
-        <aside class="panel">
-            <div class="nav" style="margin-bottom: 10px;">
-                <a href="/">Home</a>
-                <a href="/missions">Missions</a>
-                <a href="/sky">Sky Position</a>
-            </div>
-            <h2>How To Use It</h2>
-            <p>
-                Keep the default one-year range if you want rare events to show up. If the table is empty,
-                try a different location or a narrower season you care about.
-            </p>
-        </aside>
+        <div class="nav">
+            <a href="/">Home</a>
+            <a href="/missions">Missions</a>
+            <a href="/sky">Sky Position</a>
+        </div>
     </div>
 
     <form method="get" action="/events" class="events-form">
@@ -39,10 +28,6 @@
         <input type="time" name="time" th:value="${time}">
         <button type="submit">Load Events</button>
     </form>
-
-    <p class="hint">
-        Defaults use Phoenix, Arizona and a one-year window because rare events often disappear on very short date ranges.
-    </p>
 
     <div class="error" th:if="${error}" th:text="${error}">Could not load astronomy events right now.</div>
 
@@ -72,7 +57,7 @@
     </table>
 
     <p class="hint" th:if="${events != null and #lists.isEmpty(events)}">
-        No events came back for this exact location and window. Try keeping the default yearly range or changing location before assuming the API is empty.
+        No events returned for that range.
     </p>
 </main>
 </body>

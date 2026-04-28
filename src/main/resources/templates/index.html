@@ -9,30 +9,13 @@
 <body class="page-home">
 <main class="card">
     <div class="hero">
-        <div>
-            <div class="top">
-                <div>
-                    <h1>SpaceTracker</h1>
-                    <p>Launches, sky position, and event timing in one place.</p>
-                </div>
-            </div>
-
-            <div class="links">
-                <a class="btn" href="/missions">View Missions</a>
-                <a class="btn" href="/sky">Sky Position</a>
-                <a class="btn" href="/events">Astronomy Events</a>
-            </div>
+        <h1>SpaceTracker</h1>
+        <p>Launches, sky position, and events.</p>
+        <div class="links">
+            <a class="btn" href="/missions">Missions</a>
+            <a class="btn" href="/sky">Sky</a>
+            <a class="btn" href="/events">Events</a>
         </div>
-
-        <aside class="panel">
-            <h2>What It Pulls</h2>
-            <ul class="facts">
-                <li>NASA APOD for the home page</li>
-                <li>Launch Library for upcoming missions</li>
-                <li>AstronomyAPI for object positions and events</li>
-                <li>N2YO plus local Postgres cache for spacecraft lookups</li>
-            </ul>
-        </aside>
     </div>
 
     <div class="error" th:if="${error}" th:text="${error}">Could not load NASA APOD right now.</div>

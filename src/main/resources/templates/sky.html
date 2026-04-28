@@ -11,9 +11,7 @@
             <div class="top">
                 <div>
                     <h1>Sky Position</h1>
-                    <p class="hint">
-                        Live object positions for a specific location and time.
-                    </p>
+                    <p class="hint">AstronomyAPI sky data</p>
                 </div>
                 <div class="nav">
                     <a href="/">Home</a>
@@ -49,10 +47,6 @@
                     th:value="${address}"
                     placeholder="Or enter full address/city (e.g. 1600 Amphitheatre Parkway, Mountain View, CA)"
                 />
-                <p class="wide small-note">
-                    Start typing an address to get suggestions, then click one
-                    to auto-fill coordinates.
-                </p>
 
                 <div class="wide suggest" id="suggestions"></div>
 
@@ -98,97 +92,94 @@
                 No sky objects returned for current input.
             </p>
 
-            <h2 style="margin-top: 22px">Spacecraft Relative to You</h2>
-            <p class="hint">Live data currently available from WhereTheISS.at.</p>
-            <div class="error" th:if="${spacecraftError}" th:text="${spacecraftError}">
-                Could not load spacecraft positions right now.
-            </div>
+            <section th:if="${searched}">
+                <h2 style="margin-top: 22px">Spacecraft Relative to You</h2>
+                <div class="error" th:if="${spacecraftError}" th:text="${spacecraftError}">
+                    Could not load spacecraft positions right now.
+                </div>
 
-            <table
-                th:if="${spacecraft != null and !#lists.isEmpty(spacecraft)}"
-            >
-                <thead>
-                    <tr>
-                        <th>Spacecraft</th>
-                        <th>NORAD ID</th>
-                        <th>Elevation (deg)</th>
-                        <th>Azimuth (deg)</th>
-                        <th>Direction</th>
-                        <th>Range (km)</th>
-                        <th>Visibility</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr th:each="craft : ${spacecraft}">
-                        <td th:text="${craft.name}">ISS</td>
-                        <td th:text="${craft.noradId}">25544</td>
-                        <td th:text="${craft.elevationDegrees}">0.0</td>
-                        <td th:text="${craft.azimuthDegrees}">0.0</td>
-                        <td th:text="${craft.direction}">N</td>
-                        <td th:text="${craft.rangeKm}">0.0</td>
-                        <td th:text="${craft.visibility}">unknown</td>
-                    </tr>
-                </tbody>
-            </table>
+                <table
+                    th:if="${spacecraft != null and !#lists.isEmpty(spacecraft)}"
+                >
+                    <thead>
+                        <tr>
+                            <th>Spacecraft</th>
+                            <th>NORAD ID</th>
+                            <th>Elevation (deg)</th>
+                            <th>Azimuth (deg)</th>
+                            <th>Direction</th>
+                            <th>Range (km)</th>
+                            <th>Visibility</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="craft : ${spacecraft}">
+                            <td th:text="${craft.name}">ISS</td>
+                            <td th:text="${craft.noradId}">25544</td>
+                            <td th:text="${craft.elevationDegrees}">0.0</td>
+                            <td th:text="${craft.azimuthDegrees}">0.0</td>
+                            <td th:text="${craft.direction}">N</td>
+                            <td th:text="${craft.rangeKm}">0.0</td>
+                            <td th:text="${craft.visibility}">unknown</td>
+                        </tr>
+                    </tbody>
+                </table>
 
-            <p
-                class="hint"
-                th:if="${spacecraft != null and #lists.isEmpty(spacecraft)}"
-            >
-                No spacecraft data available right now from this source.
-            </p>
-
-            <h2 style="margin-top: 22px">Optical Satellite Passes</h2>
-            <p class="hint">Visible now or within the next 5 minutes from NY2O.</p>
-            <div class="error" th:if="${passError}" th:text="${passError}">
-                Could not load visible pass predictions right now.
-            </div>
-
-            <table
-                th:if="${visiblePasses != null and !#lists.isEmpty(visiblePasses)}"
-            >
-                <thead>
-                    <tr>
-                        <th>Satellite</th>
-                        <th>NORAD</th>
-                        <th>Status</th>
-                        <th>Start</th>
-                        <th>Max</th>
-                        <th>End</th>
-                        <th>Max El</th>
-                        <th>Direction</th>
-                        <th>Duration</th>
-                        <th>Mag</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr th:each="p : ${visiblePasses}">
-                        <td th:text="${p.satName}">SPACE STATION</td>
-                        <td th:text="${p.satId}">25544</td>
-                        <td th:text="${p.status}">Visible now</td>
-                        <td th:text="${p.startLocal}">04-15 21:00:00</td>
-                        <td th:text="${p.maxLocal}">04-15 21:02:00</td>
-                        <td th:text="${p.endLocal}">04-15 21:05:00</td>
-                        <td th:text="${p.maxElevation}">45.2</td>
-                        <td th:text="${p.maxDirection}">SW</td>
-                        <td th:text="${p.durationSeconds}">300</td>
-                        <td th:text="${p.magnitudeLabel}">-1.8</td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <p
-                class="hint"
-                th:if="${visiblePasses != null and #lists.isEmpty(visiblePasses)}"
-            >
-                No optical passes found in the next 5 minutes.
-            </p>
-
-            <section class="catalog-box">
-                <h2 style="margin-top: 0">Local Spacecraft Lookup</h2>
-                <p class="hint">
-                    This searches your Postgres cache only. It does not hit upstream APIs.
+                <p
+                    class="hint"
+                    th:if="${spacecraft != null and #lists.isEmpty(spacecraft)}"
+                >
+                    No spacecraft data available right now.
                 </p>
+
+                <h2 style="margin-top: 22px">Optical Satellite Passes</h2>
+                <div class="error" th:if="${passError}" th:text="${passError}">
+                    Could not load visible pass predictions right now.
+                </div>
+
+                <table
+                    th:if="${visiblePasses != null and !#lists.isEmpty(visiblePasses)}"
+                >
+                    <thead>
+                        <tr>
+                            <th>Satellite</th>
+                            <th>NORAD</th>
+                            <th>Status</th>
+                            <th>Start</th>
+                            <th>Max</th>
+                            <th>End</th>
+                            <th>Max El</th>
+                            <th>Direction</th>
+                            <th>Duration</th>
+                            <th>Mag</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="p : ${visiblePasses}">
+                            <td th:text="${p.satName}">SPACE STATION</td>
+                            <td th:text="${p.satId}">25544</td>
+                            <td th:text="${p.status}">Visible now</td>
+                            <td th:text="${p.startLocal}">04-15 21:00:00</td>
+                            <td th:text="${p.maxLocal}">04-15 21:02:00</td>
+                            <td th:text="${p.endLocal}">04-15 21:05:00</td>
+                            <td th:text="${p.maxElevation}">45.2</td>
+                            <td th:text="${p.maxDirection}">SW</td>
+                            <td th:text="${p.durationSeconds}">300</td>
+                            <td th:text="${p.magnitudeLabel}">-1.8</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <p
+                    class="hint"
+                    th:if="${visiblePasses != null and #lists.isEmpty(visiblePasses)}"
+                >
+                    No optical passes found in the next 5 minutes.
+                </p>
+            </section>
+
+            <section class="catalog-box" th:if="${searched}">
+                <h2 style="margin-top: 0">Local Spacecraft Lookup</h2>
                 <div class="catalog-search">
                     <input
                         type="text"
@@ -199,9 +190,7 @@
                 </div>
                 <div class="catalog-suggest" id="catalogSuggest"></div>
                 <div class="catalog-results" id="catalogResults"></div>
-                <p class="catalog-empty" id="catalogEmpty">
-                    Search after using `/sky` a few times so the local catalog has entries.
-                </p>
+                <p class="catalog-empty" id="catalogEmpty"></p>
             </section>
         </main>
 
@@ -359,6 +348,7 @@
                 if (!items || items.length === 0) {
                     catalogResults.style.display = "none";
                     catalogEmpty.textContent = "No local cache matches found.";
+                    catalogEmpty.style.display = "block";
                     return;
                 }
 
@@ -376,6 +366,7 @@
 
                 catalogResults.style.display = "block";
                 catalogEmpty.textContent = "";
+                catalogEmpty.style.display = "none";
             }
 
             function hideCatalogSuggest() {
@@ -412,11 +403,13 @@
                 if (query.length < 2) {
                     catalogResults.style.display = "none";
                     catalogResults.innerHTML = "";
-                    catalogEmpty.textContent = "Type at least 2 characters to search the local cache.";
+                    catalogEmpty.textContent = "";
+                    catalogEmpty.style.display = "none";
                     return;
                 }
 
-                catalogEmpty.textContent = "Searching local cache...";
+                catalogEmpty.textContent = "";
+                catalogEmpty.style.display = "none";
 
                 try {
                     const response = await fetch(
@@ -426,6 +419,7 @@
                     if (!response.ok) {
                         catalogResults.style.display = "none";
                         catalogEmpty.textContent = "Local cache search failed.";
+                        catalogEmpty.style.display = "block";
                         return;
                     }
 
@@ -434,6 +428,7 @@
                 } catch (_) {
                     catalogResults.style.display = "none";
                     catalogEmpty.textContent = "Local cache search failed.";
+                    catalogEmpty.style.display = "block";
                 }
             }
 
