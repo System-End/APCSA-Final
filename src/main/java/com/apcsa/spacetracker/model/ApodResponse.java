@@ -1,5 +1,8 @@
 package com.apcsa.spacetracker.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ApodResponse {
     private String title;
     private String date;
