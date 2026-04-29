@@ -1,6 +1,7 @@
 package com.apcsa.spacetracker.controller;
 
 import com.apcsa.spacetracker.service.EventService;
+import com.apcsa.spacetracker.service.GeocodingService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,25 +16,46 @@ public class EventController {
     private static final double DEFAULT_LONGITUDE = -112.0740;
 
     private final EventService eventService;
+    private final GeocodingService geocodingService;
 
-    public EventController(EventService eventService) {
+    public EventController(EventService eventService, GeocodingService geocodingService) {
         this.eventService = eventService;
+        this.geocodingService = geocodingService;
     }
 
     @GetMapping("/events")
     public String events(
             @RequestParam(required = false) Double latitude,
             @RequestParam(required = false) Double longitude,
+            @RequestParam(required = false) String address,
             @RequestParam(required = false) LocalDate fromDate,
             @RequestParam(required = false) LocalDate toDate,
             @RequestParam(required = false) LocalTime time,
             Model model
     ) {
-        Double resolvedLat = latitude == null ? DEFAULT_LATITUDE : latitude;
-        Double resolvedLon = longitude == null ? DEFAULT_LONGITUDE : longitude;
+        Double resolvedLat = latitude;
+        Double resolvedLon = longitude;
         LocalDate resolvedFrom = fromDate == null ? LocalDate.now() : fromDate;
         LocalDate resolvedTo = toDate == null ? resolvedFrom.plusMonths(12) : toDate;
         LocalTime resolvedTime = time == null ? LocalTime.of(21, 0) : time;
+
+        if ((resolvedLat == null || resolvedLon == null) && address != null && !address.isBlank()) {
+            GeocodingService.Coordinates coords = geocodingService.geocodeAddress(address);
+            if (coords != null) {
+                resolvedLat = coords.getLatitude();
+                resolvedLon = coords.getLongitude();
+            } else {
+                model.addAttribute("error", "Could not find that address.");
+            }
+        }
+
+        if (resolvedLat == null) {
+            resolvedLat = DEFAULT_LATITUDE;
+        }
+
+        if (resolvedLon == null) {
+            resolvedLon = DEFAULT_LONGITUDE;
+        }
 
         if (resolvedTo.isBefore(resolvedFrom)) {
             model.addAttribute("error", "`To` date must be on or after `From` date.");
@@ -50,6 +72,7 @@ public class EventController {
 
         model.addAttribute("latitude", resolvedLat);
         model.addAttribute("longitude", resolvedLon);
+        model.addAttribute("address", address == null ? "" : address);
         model.addAttribute("fromDate", resolvedFrom);
         model.addAttribute("toDate", resolvedTo);
         model.addAttribute("time", resolvedTime);
