@@ -24,8 +24,16 @@
         <h2>NASA APOD</h2>
         <p class="small" th:text="${apod.date}">date</p>
         <h3 th:text="${apod.title}">title</h3>
-        <p th:text="${apod.explanation}">explanation</p>
-        <img th:if="${apod.media_type == 'image'}" th:src="${apod.url}" alt="NASA APOD image">
+        <a
+            class="apod-media"
+            th:if="${apod.media_type == 'image'}"
+            th:href="${apod.hdurl != null and !#strings.isEmpty(apod.hdurl) ? apod.hdurl : apod.url}"
+            target="_blank"
+            rel="noopener"
+        >
+            <img th:src="${apod.url}" alt="NASA APOD image">
+        </a>
+        <p class="apod-copy" th:text="${apod.explanation}">explanation</p>
         <p class="small" th:if="${apod.media_type != 'image'}">
             APOD today is not an image. Open:
             <a th:href="${apod.url}" target="_blank" rel="noopener">NASA link</a>
