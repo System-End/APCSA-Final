@@ -92,6 +92,7 @@ public class SkyService {
                     continue;
                 }
 
+                // AstronomyAPI stores the altitude/azimuth inside the first table cell.
                 JsonNode firstCell = row.path("cells").isArray() && !row.path("cells").isEmpty()
                         ? row.path("cells").get(0)
                         : null;
@@ -113,6 +114,7 @@ public class SkyService {
                 objects.add(new SkyObject(name, round1(altitude), round1(azimuth), direction, visible));
             }
 
+            // Show visible objects first, then sort by how high they are in the sky.
             objects.sort(
                     Comparator.comparing(SkyObject::isVisible).reversed()
                             .thenComparing(SkyObject::getAltitudeDegrees, Comparator.reverseOrder())

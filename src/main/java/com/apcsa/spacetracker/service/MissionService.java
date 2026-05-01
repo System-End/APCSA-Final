@@ -29,6 +29,7 @@ public class MissionService {
         List<Mission> missions = fetchUpcomingMissions();
         List<Mission> filtered = new ArrayList<>();
 
+        // Filter the parsed mission list in memory so each search feels instant.
         for (Mission mission : missions) {
             if (!matchesAgency(mission, agencyFilter)) {
                 continue;
@@ -61,6 +62,7 @@ public class MissionService {
             }
 
             for (JsonNode launch : results) {
+                // Keep only the fields the missions table actually displays.
                 String name = launch.path("name").asText("Unknown");
                 String agency = launch.path("launch_service_provider").path("name").asText("Unknown");
                 String status = launch.path("status").path("name").asText("Unknown");
@@ -106,6 +108,7 @@ public class MissionService {
         if (agencyFilter == null || agencyFilter.isBlank()) {
             return true;
         }
+        // Partial matches are friendlier than forcing a full agency name.
         return mission.getAgency().toLowerCase().contains(agencyFilter.toLowerCase());
     }
 

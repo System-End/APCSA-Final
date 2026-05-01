@@ -50,6 +50,7 @@ public class PostgresCacheService {
             return null;
         }
 
+        // Only return fresh rows so each service can treat cache misses the same way.
         String sql = """
                 SELECT response_json
                 FROM api_response_cache
@@ -106,6 +107,7 @@ public class PostgresCacheService {
             return;
         }
 
+        // The catalog lets the UI search spacecraft names without calling the APIs again.
         String sql = """
                 INSERT INTO spacecraft_catalog (norad_id, display_name, normalized_name, source, last_seen_at)
                 VALUES (?, ?, ?, ?, ?)
@@ -207,6 +209,7 @@ public class PostgresCacheService {
         String normalized = normalizeName(query);
         String prefix = normalized + "%";
         String contains = "%" + normalized + "%";
+        // Autocomplete prefers prefix matches, but partial names should still work.
         String sql = """
                 SELECT norad_id, display_name, source, last_seen_at
                 FROM spacecraft_catalog

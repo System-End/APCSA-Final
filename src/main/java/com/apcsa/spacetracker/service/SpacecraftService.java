@@ -52,6 +52,7 @@ public class SpacecraftService {
     public List<SpacecraftRelative> getRelativeSpacecraft(double observerLat, double observerLon) {
         List<SpacecraftRelative> results = new ArrayList<>();
 
+        // Turn live satellite positions into something the user can read from their location.
         List<Integer> ids = fetchAvailableSatelliteIds();
         for (Integer id : ids) {
             addIfAvailable(results, observerLat, observerLon, id, "SAT-" + id);
@@ -65,6 +66,7 @@ public class SpacecraftService {
             return List.of();
         }
 
+        // Start with bright nearby satellites, then narrow to passes happening right now.
         List<Integer> candidateIds = fetchPassCandidateIds(observerLat, observerLon);
         long now = Instant.now().getEpochSecond();
         long windowEnd = now + WINDOW_SECONDS;
@@ -236,6 +238,7 @@ public class SpacecraftService {
                     continue;
                 }
 
+                // Keep the list focused on passes the user could realistically look for now.
                 if (startUtc > windowEnd || endUtc < now) {
                     continue;
                 }

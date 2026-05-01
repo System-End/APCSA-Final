@@ -93,6 +93,7 @@ public class GeocodingService {
         String cacheKey = "nominatim:" + normalizeQuery(query) + ":limit:" + limit;
 
         try {
+            // Location search is slow and stable, so it benefits from a longer cache.
             String cached = cacheService.getCachedResponse("nominatim", cacheKey);
             if (cached != null && !cached.isBlank()) {
                 return objectMapper.readTree(cached);

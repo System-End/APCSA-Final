@@ -59,6 +59,7 @@ public class EventService {
         ensureCredentialsPresent();
 
         List<AstroEvent> events = new ArrayList<>();
+        // AstronomyAPI splits sun and moon events, so the page merges them into one timeline.
         events.addAll(fetchEventsForBody("sun", latitude, longitude, fromDate, toDate, time));
         events.addAll(fetchEventsForBody("moon", latitude, longitude, fromDate, toDate, time));
         events.sort(Comparator.comparing(AstroEvent::getEventTime));
@@ -120,6 +121,7 @@ public class EventService {
                 for (JsonNode event : eventNode) {
                     String eventType = event.path("type").asText("Unknown");
                     JsonNode highlights = event.path("eventHighlights");
+                    // Peak gives the clearest one-line summary, even when an event has many phases.
                     String eventTime = formatDateTime(highlights.path("peak").path("date").asText(""));
                     String peakAltitude = formatAltitude(highlights.path("peak").path("altitude"));
                     String riseTime = formatDateTime(event.path("rise").asText(""));

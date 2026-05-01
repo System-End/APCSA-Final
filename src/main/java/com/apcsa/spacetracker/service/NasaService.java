@@ -37,6 +37,7 @@ public class NasaService {
         String cacheKey = "apod:" + LocalDate.now();
 
         try {
+            // APOD changes daily, so one cache entry per date is enough.
             String json = readThroughCache("nasa", cacheKey, url, APOD_CACHE_TTL);
             if (json == null || json.isBlank()) {
                 return null;
@@ -53,6 +54,7 @@ public class NasaService {
             return cached;
         }
 
+        // Store the raw NASA response so later requests can rebuild the page from cache.
         String live = restTemplate.getForObject(url, String.class);
         if (live != null && !live.isBlank()) {
             cacheService.putCachedResponse(source, cacheKey, live, ttl);

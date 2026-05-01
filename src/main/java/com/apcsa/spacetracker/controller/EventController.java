@@ -39,6 +39,7 @@ public class EventController {
         LocalDate resolvedTo = toDate == null ? resolvedFrom.plusMonths(12) : toDate;
         LocalTime resolvedTime = time == null ? LocalTime.of(21, 0) : time;
 
+        // Match the sky page: users can search by coordinates or by address.
         if ((resolvedLat == null || resolvedLon == null) && address != null && !address.isBlank()) {
             GeocodingService.Coordinates coords = geocodingService.geocodeAddress(address);
             if (coords != null) {
@@ -50,6 +51,7 @@ public class EventController {
         }
 
         if (resolvedLat == null) {
+            // Default to Phoenix so the page has useful sample data on first load.
             resolvedLat = DEFAULT_LATITUDE;
         }
 

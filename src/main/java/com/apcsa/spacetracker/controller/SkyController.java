@@ -38,6 +38,7 @@ public class SkyController {
         Double resolvedLat = latitude;
         Double resolvedLon = longitude;
 
+        // Let users search by address without forcing them to know coordinates.
         if ((resolvedLat == null || resolvedLon == null) && address != null && !address.isBlank()) {
             GeocodingService.Coordinates coords = geocodingService.geocodeAddress(address);
             if (coords != null) {
@@ -56,6 +57,7 @@ public class SkyController {
             }
         }
 
+        // The page keeps result panels hidden until there is a real lookup to show.
         model.addAttribute("searched", resolvedLat != null && resolvedLon != null);
         model.addAttribute("latitude", resolvedLat == null ? "" : resolvedLat);
         model.addAttribute("longitude", resolvedLon == null ? "" : resolvedLon);

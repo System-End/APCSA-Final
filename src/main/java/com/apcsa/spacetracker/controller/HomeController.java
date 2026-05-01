@@ -17,6 +17,7 @@ public class HomeController {
     @GetMapping("/")
     public String home(Model model) {
         try {
+            // The landing page centers on NASA's photo of the day.
             ApodResponse apod = nasaService.getApod();
             model.addAttribute("apod", apod);
         } catch (Exception ex) {

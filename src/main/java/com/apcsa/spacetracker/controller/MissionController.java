@@ -22,6 +22,7 @@ public class MissionController {
             Model model
     ) {
         try {
+            // Missions are fetched once, then filtered by whatever fields the user filled in.
             model.addAttribute("missions", missionService.getUpcomingMissions(agency, status, year));
         } catch (Exception ex) {
             model.addAttribute("error", "Could not load mission data right now.");
