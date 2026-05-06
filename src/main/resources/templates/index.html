@@ -8,15 +8,20 @@
 </head>
 <body class="page-home">
 <main class="card">
-    <div class="hero">
+    <header class="site-header">
+        <a class="brand" href="/">SpaceTracker</a>
+        <nav class="site-nav">
+            <a class="active" href="/">Home</a>
+            <a href="/missions">Missions</a>
+            <a href="/sky">Sky</a>
+            <a href="/events">Events</a>
+        </nav>
+    </header>
+
+    <section class="hero">
         <h1>SpaceTracker</h1>
         <p>Launches, sky position, and events.</p>
-        <div class="links">
-            <a class="btn" href="/missions">Missions</a>
-            <a class="btn" href="/sky">Sky</a>
-            <a class="btn" href="/events">Events</a>
-        </div>
-    </div>
+    </section>
 
     <div class="error" th:if="${error}" th:text="${error}">Could not load NASA APOD right now.</div>
 

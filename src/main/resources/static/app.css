@@ -86,29 +86,31 @@ p,
     line-height: 1.45;
 }
 
-.top {
+.site-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     gap: 16px;
     flex-wrap: wrap;
-    margin-bottom: 18px;
+    margin-bottom: 26px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--line);
 }
 
-.links,
-.nav {
+.brand {
+    color: var(--text);
+    font-size: 1.05rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.site-nav {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
 }
 
-.links {
-    margin-top: 16px;
-}
-
-.btn,
-.nav a,
-.home,
+.site-nav a,
 button {
     appearance: none;
     border: 1px solid var(--line);
@@ -119,13 +121,16 @@ button {
     border-radius: 12px;
 }
 
+.site-nav a.active {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
 button {
     cursor: pointer;
 }
 
-.btn:hover,
-.nav a:hover,
-.home:hover,
+.site-nav a:hover,
 button:hover {
     border-color: var(--accent);
 }
@@ -134,10 +139,15 @@ button:hover {
     margin-bottom: 20px;
 }
 
+.page-title,
 .page-home .hero {
     max-width: 760px;
     margin-left: auto;
     margin-right: auto;
+}
+
+.page-title {
+    margin-bottom: 18px;
 }
 
 .panel,
@@ -314,6 +324,14 @@ th {
     margin-top: 24px;
     padding-top: 16px;
     border-top: 1px solid var(--line);
+}
+
+.result-heading {
+    margin-top: 22px;
+}
+
+.catalog-heading {
+    margin-top: 0;
 }
 
 .catalog-row {

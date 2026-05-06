@@ -8,17 +8,20 @@
     </head>
     <body class="page-sky">
         <main class="wrap">
-            <div class="top">
-                <div>
-                    <h1>Sky Position</h1>
-                    <p class="hint">AstronomyAPI sky data</p>
-                </div>
-                <div class="nav">
+            <header class="site-header">
+                <a class="brand" href="/">SpaceTracker</a>
+                <nav class="site-nav">
                     <a href="/">Home</a>
                     <a href="/missions">Missions</a>
+                    <a class="active" href="/sky">Sky</a>
                     <a href="/events">Events</a>
-                </div>
-            </div>
+                </nav>
+            </header>
+
+            <section class="page-title">
+                <h1>Sky Position</h1>
+                <p class="hint">AstronomyAPI sky data</p>
+            </section>
 
             <form method="get" action="/sky" id="skyForm" class="sky-form">
                 <input
@@ -93,7 +96,7 @@
             </p>
 
             <section th:if="${searched}">
-                <h2 style="margin-top: 22px">Spacecraft Relative to You</h2>
+                <h2 class="result-heading">Spacecraft Relative to You</h2>
                 <div class="hint" id="spacecraftLoading">Loading spacecraft...</div>
                 <div class="error" id="spacecraftError" style="display: none;"></div>
                 <div id="spacecraftEmpty" class="hint" style="display: none;">No spacecraft data available right now.</div>
@@ -112,7 +115,7 @@
                     <tbody id="spacecraftBody"></tbody>
                 </table>
 
-                <h2 style="margin-top: 22px">Optical Satellite Passes</h2>
+                <h2 class="result-heading">Optical Satellite Passes</h2>
                 <div class="hint" id="passesLoading">Loading passes...</div>
                 <div class="error" id="passesError" style="display: none;"></div>
                 <div id="passesEmpty" class="hint" style="display: none;">No optical passes found in the next 5 minutes.</div>
@@ -136,7 +139,7 @@
             </section>
 
             <section class="catalog-box" th:if="${searched}">
-                <h2 style="margin-top: 0">Local Spacecraft Lookup</h2>
+                <h2 class="catalog-heading">Local Spacecraft Lookup</h2>
                 <div class="catalog-search">
                     <input
                         type="text"

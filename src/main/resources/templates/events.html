@@ -8,17 +8,20 @@
 </head>
 <body class="page-events">
 <main class="wrap">
-    <div class="top">
-        <div>
-            <h1>Astronomy Events</h1>
-            <p class="sub">Sun and moon events</p>
-        </div>
-        <div class="nav">
+    <header class="site-header">
+        <a class="brand" href="/">SpaceTracker</a>
+        <nav class="site-nav">
             <a href="/">Home</a>
             <a href="/missions">Missions</a>
-            <a href="/sky">Sky Position</a>
-        </div>
-    </div>
+            <a href="/sky">Sky</a>
+            <a class="active" href="/events">Events</a>
+        </nav>
+    </header>
+
+    <section class="page-title">
+        <h1>Astronomy Events</h1>
+        <p class="sub">Sun and moon events</p>
+    </section>
 
     <form method="get" action="/events" class="events-form">
         <input type="number" step="any" name="latitude" th:value="${latitude}" placeholder="Latitude">

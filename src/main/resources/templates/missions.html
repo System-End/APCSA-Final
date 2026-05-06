@@ -8,18 +8,20 @@
 </head>
 <body class="page-missions">
 <main class="wrap">
-    <div class="top">
-        <div>
-            <h1>Upcoming Missions</h1>
-            <p class="sub">Launch Library 2</p>
-        </div>
-        <a href="/" class="home">Home</a>
-    </div>
+    <header class="site-header">
+        <a class="brand" href="/">SpaceTracker</a>
+        <nav class="site-nav">
+            <a href="/">Home</a>
+            <a class="active" href="/missions">Missions</a>
+            <a href="/sky">Sky</a>
+            <a href="/events">Events</a>
+        </nav>
+    </header>
 
-    <div class="nav" style="margin-bottom: 12px;">
-        <a href="/sky" class="home" style="margin-right: 8px;">Sky Position</a>
-        <a href="/events" class="home">Astronomy Events</a>
-    </div>
+    <section class="page-title">
+        <h1>Upcoming Missions</h1>
+        <p class="sub">Launch Library 2</p>
+    </section>
 
     <form class="filters" method="get" action="/missions">
         <input type="text" name="agency" th:value="${agency}" placeholder="Agency (e.g. SpaceX)">
