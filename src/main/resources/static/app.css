@@ -31,7 +31,7 @@ body {
 
 main.card,
 main.wrap {
-    width: min(1120px, calc(100% - 40px));
+    width: min(1200px, calc(100% - 40px));
     margin: 28px auto;
     padding: 24px;
     background: var(--surface);
@@ -49,6 +49,10 @@ h3 {
 
 h1 {
     font-size: clamp(1.8rem, 4vw, 2.8rem);
+}
+
+.page-title h1 {
+    font-size: clamp(1.7rem, 3vw, 2.35rem);
 }
 
 h2 {
@@ -106,31 +110,39 @@ p,
 
 .site-nav {
     display: flex;
-    gap: 8px;
+    gap: 18px;
     flex-wrap: wrap;
 }
 
-.site-nav a,
+.site-nav a {
+    color: var(--muted);
+    text-decoration: none;
+    padding: 2px 0 4px;
+    border-bottom: 2px solid transparent;
+}
+
+.site-nav a.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+}
+
+.site-nav a:hover {
+    color: var(--text);
+}
+
 button {
     appearance: none;
     border: 1px solid var(--line);
     background: var(--surface-2);
     color: var(--text);
-    text-decoration: none;
     padding: 10px 12px;
     border-radius: 12px;
-}
-
-.site-nav a.active {
-    border-color: var(--accent);
-    color: var(--accent);
 }
 
 button {
     cursor: pointer;
 }
 
-.site-nav a:hover,
 button:hover {
     border-color: var(--accent);
 }
@@ -139,8 +151,9 @@ button:hover {
     margin-bottom: 20px;
 }
 
-.page-title,
-.page-home .hero {
+.content-column,
+.page-home .hero,
+.page-home .apod {
     max-width: 760px;
     margin-left: auto;
     margin-right: auto;
@@ -164,9 +177,6 @@ button:hover {
 }
 
 .page-home .apod {
-    max-width: 760px;
-    margin-left: auto;
-    margin-right: auto;
     text-align: center;
 }
 
