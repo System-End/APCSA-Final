@@ -26,12 +26,14 @@ Set these in `.env` locally or in your deploy env file:
 NASA_API_KEY=
 ASTRONOMY_API_APP_ID=
 ASTRONOMY_API_APP_SECRET=
-NY2O_API_KEY=
+N2YO_API_KEY=
 POSTGRES_JDBC_URL=jdbc:postgresql://localhost:5432/spacetracker
 POSTGRES_USERNAME=
 POSTGRES_PASSWORD=
 PORT=8080
 ```
+
+Older deployments using `NY2O_API_KEY` still work, but `N2YO_API_KEY` is the correct spelling.
 
 ## Run locally
 1. Make sure Postgres is running.
@@ -49,3 +51,4 @@ Open `http://localhost:8080`.
 - API responses are cached in Postgres table `api_response_cache`
 - Spacecraft names/IDs are stored in `spacecraft_catalog`
 - Cache tables are auto-created on startup when Postgres env vars are present
+- Cache counts are available at `/api/cache/stats`

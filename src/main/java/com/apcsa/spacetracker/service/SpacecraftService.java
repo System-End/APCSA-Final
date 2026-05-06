@@ -4,6 +4,8 @@ import com.apcsa.spacetracker.model.SpacecraftRelative;
 import com.apcsa.spacetracker.model.VisiblePass;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -19,6 +21,7 @@ import java.util.Locale;
 
 @Service
 public class SpacecraftService {
+    private static final Logger log = LoggerFactory.getLogger(SpacecraftService.class);
     private static final double EARTH_A_KM = 6378.137;
     private static final double EARTH_F = 1.0 / 298.257223563;
     private static final double EARTH_E2 = EARTH_F * (2 - EARTH_F);
@@ -36,16 +39,16 @@ public class SpacecraftService {
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
-    private final String ny2oApiKey;
+    private final String n2yoApiKey;
     private final PostgresCacheService cacheService;
 
     public SpacecraftService(
-            @Value("${ny2o.api.key:}") String ny2oApiKey,
+            @Value("${n2yo.api.key:}") String n2yoApiKey,
             PostgresCacheService cacheService
     ) {
         this.restTemplate = new RestTemplate();
         this.objectMapper = new ObjectMapper();
-        this.ny2oApiKey = ny2oApiKey;
+        this.n2yoApiKey = n2yoApiKey;
         this.cacheService = cacheService;
     }
 
@@ -62,7 +65,7 @@ public class SpacecraftService {
     }
 
     public List<VisiblePass> getVisiblePasses(double observerLat, double observerLon) {
-        if (ny2oApiKey == null || ny2oApiKey.isBlank()) {
+        if (n2yoApiKey == null || n2yoApiKey.isBlank()) {
             return List.of();
         }
 
@@ -118,6 +121,7 @@ public class SpacecraftService {
             }
             return ids;
         } catch (Exception e) {
+            log.warn("WhereTheISS satellite list failed; falling back to ISS only", e);
             return List.of(25544);
         }
     }
@@ -126,7 +130,7 @@ public class SpacecraftService {
         String url = String.format(
                 Locale.US,
                 "https://api.n2yo.com/rest/v1/satellite/above/%.6f/%.6f/0/%d/%d/&apiKey=%s",
-                lat, lon, SEARCH_RADIUS_DEG, CATEGORY_BRIGHTEST, ny2oApiKey
+                lat, lon, SEARCH_RADIUS_DEG, CATEGORY_BRIGHTEST, n2yoApiKey
         );
         String cacheKey = String.format(Locale.US, "n2yo:above:%.4f:%.4f:%d:%d", lat, lon, SEARCH_RADIUS_DEG, CATEGORY_BRIGHTEST);
 
@@ -153,7 +157,8 @@ public class SpacecraftService {
                     }
                 }
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.warn("N2YO nearby satellite lookup failed for lat={} lon={}", lat, lon, e);
         }
 
         return ids;
@@ -196,7 +201,8 @@ public class SpacecraftService {
                     round1(topo.rangeKm),
                     visibility
             ));
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.warn("WhereTheISS satellite detail failed for NORAD {}", noradId, e);
         }
     }
 
@@ -210,7 +216,7 @@ public class SpacecraftService {
         String url = String.format(
                 Locale.US,
                 "https://api.n2yo.com/rest/v1/satellite/visualpasses/%d/%.6f/%.6f/0/%d/%d/&apiKey=%s",
-                satId, lat, lon, DAYS, MIN_VISIBILITY_SECONDS, ny2oApiKey
+                satId, lat, lon, DAYS, MIN_VISIBILITY_SECONDS, n2yoApiKey
         );
         String cacheKey = String.format(Locale.US, "n2yo:visualpasses:%d:%.4f:%.4f:%d:%d", satId, lat, lon, DAYS, MIN_VISIBILITY_SECONDS);
 
@@ -265,7 +271,8 @@ public class SpacecraftService {
                         magnitude
                 ));
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.warn("N2YO visual pass lookup failed for NORAD {}", satId, e);
         }
 
         return results;

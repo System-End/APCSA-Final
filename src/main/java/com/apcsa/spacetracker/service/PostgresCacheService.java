@@ -1,6 +1,9 @@
 package com.apcsa.spacetracker.service;
 
 import com.apcsa.spacetracker.model.SpacecraftCatalogEntry;
+import com.apcsa.spacetracker.model.CacheStat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +21,7 @@ import java.util.List;
 
 @Service
 public class PostgresCacheService {
+    private static final Logger log = LoggerFactory.getLogger(PostgresCacheService.class);
     private static final DateTimeFormatter DISPLAY_TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final String jdbcUrl;
@@ -67,7 +71,8 @@ public class PostgresCacheService {
                     return resultSet.getString("response_json");
                 }
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.warn("Cache lookup failed for source={} key={}", source, cacheKey, e);
         }
 
         return null;
@@ -98,7 +103,8 @@ public class PostgresCacheService {
             statement.setTimestamp(4, Timestamp.from(now));
             statement.setTimestamp(5, Timestamp.from(expires));
             statement.executeUpdate();
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.warn("Cache write failed for source={} key={}", source, cacheKey, e);
         }
     }
 
@@ -127,7 +133,8 @@ public class PostgresCacheService {
             statement.setString(4, source);
             statement.setTimestamp(5, Timestamp.from(now));
             statement.executeUpdate();
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.warn("Spacecraft catalog update failed for NORAD {}", noradId, e);
         }
     }
 
@@ -156,7 +163,8 @@ public class PostgresCacheService {
                     ids.add(resultSet.getInt("norad_id"));
                 }
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.warn("Spacecraft catalog ID search failed for query {}", query, e);
         }
 
         return ids;
@@ -195,7 +203,8 @@ public class PostgresCacheService {
                     ));
                 }
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.warn("Spacecraft catalog search failed for query {}", query, e);
         }
 
         return results;
@@ -241,10 +250,50 @@ public class PostgresCacheService {
                     ));
                 }
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.warn("Spacecraft catalog suggestion search failed for query {}", query, e);
         }
 
         return results;
+    }
+
+    public List<CacheStat> getCacheStats() {
+        if (!enabled) {
+            return List.of();
+        }
+
+        String responseStatsSql = """
+                SELECT source,
+                       COUNT(*) AS total_entries,
+                       COUNT(*) FILTER (WHERE expires_at > CURRENT_TIMESTAMP) AS fresh_entries
+                FROM api_response_cache
+                GROUP BY source
+                ORDER BY source
+                """;
+        String catalogStatsSql = "SELECT COUNT(*) AS total_entries FROM spacecraft_catalog";
+
+        List<CacheStat> stats = new ArrayList<>();
+        try (Connection connection = openConnection();
+             PreparedStatement responseStats = connection.prepareStatement(responseStatsSql);
+             PreparedStatement catalogStats = connection.prepareStatement(catalogStatsSql);
+             ResultSet responseRows = responseStats.executeQuery()) {
+            while (responseRows.next()) {
+                long total = responseRows.getLong("total_entries");
+                long fresh = responseRows.getLong("fresh_entries");
+                stats.add(new CacheStat(responseRows.getString("source"), total, fresh, total - fresh));
+            }
+
+            try (ResultSet catalogRows = catalogStats.executeQuery()) {
+                if (catalogRows.next()) {
+                    long catalogEntries = catalogRows.getLong("total_entries");
+                    stats.add(new CacheStat("spacecraft_catalog", catalogEntries, catalogEntries, 0));
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Cache stats lookup failed", e);
+        }
+
+        return stats;
     }
 
     private void initializeSchema() {
@@ -281,7 +330,8 @@ public class PostgresCacheService {
             cacheTable.execute();
             catalogTable.execute();
             catalogIndex.execute();
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.warn("Cache schema initialization failed", e);
         }
     }
 
